@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 function App() {
@@ -10,12 +9,32 @@ function App() {
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
 
+  const [error, setError] = useState("");
+
   // Get countries
   useEffect(() => {
     fetch("https://location-selector.labs.crio.do/countries")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch countries");
+        }
+
+        return response.text();
+      })
+      .then((text) => {
+        if (!text) {
+          throw new Error("Failed to fetch countries");
+        }
+
+        return JSON.parse(text);
+      })
       .then((data) => {
         setCountries(data);
+        setError("");
+      })
+      .catch(() => {
+        setCountries([]);
+        setError("Failed to load countries");
       });
   }, []);
 
@@ -32,12 +51,31 @@ function App() {
     fetch(
       `https://location-selector.labs.crio.do/country=${selectedCountry}/states`
     )
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch states");
+        }
+
+        return response.text();
+      })
+      .then((text) => {
+        if (!text) {
+          throw new Error("Failed to fetch states");
+        }
+
+        return JSON.parse(text);
+      })
       .then((data) => {
         setStates(data);
         setCities([]);
         setSelectedState("");
         setSelectedCity("");
+        setError("");
+      })
+      .catch(() => {
+        setStates([]);
+        setCities([]);
+        setError("Failed to load states");
       });
   }, [selectedCountry]);
 
@@ -52,18 +90,36 @@ function App() {
     fetch(
       `https://location-selector.labs.crio.do/country=${selectedCountry}/state=${selectedState}/cities`
     )
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch cities");
+        }
+
+        return response.text();
+      })
+      .then((text) => {
+        if (!text) {
+          throw new Error("Failed to fetch cities");
+        }
+
+        return JSON.parse(text);
+      })
       .then((data) => {
         setCities(data);
         setSelectedCity("");
+        setError("");
+      })
+      .catch(() => {
+        setCities([]);
+        setError("Failed to load cities");
       });
   }, [selectedState, selectedCountry]);
 
   return (
     <div>
-      <h1>Select Location</h1>
+      <h1>Location Selector</h1>
 
-      {/* Country Dropdown */}
+      {/* Country */}
       <select
         value={selectedCountry}
         onChange={(e) => setSelectedCountry(e.target.value)}
@@ -77,7 +133,7 @@ function App() {
         ))}
       </select>
 
-      {/* State Dropdown */}
+      {/* State */}
       <select
         value={selectedState}
         onChange={(e) => setSelectedState(e.target.value)}
@@ -92,7 +148,7 @@ function App() {
         ))}
       </select>
 
-      {/* City Dropdown */}
+      {/* City */}
       <select
         value={selectedCity}
         onChange={(e) => setSelectedCity(e.target.value)}
@@ -106,6 +162,9 @@ function App() {
           </option>
         ))}
       </select>
+
+      {/* Error */}
+      {error && <p>{error}</p>}
 
       {/* Selected Location */}
       {selectedCity && (
